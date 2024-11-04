@@ -9,6 +9,10 @@ let totalRounds = 0;
 let correctTitleGuesses = 0;
 let correctArtistGuesses = 0;
 
+// Variables to store Chart.js instances
+let titleChart = null;
+let artistChart = null;
+
 document.getElementById('playlist-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   playlistLink = document.getElementById('playlist-link').value;
@@ -227,71 +231,86 @@ function endGame() {
   document.getElementById('artist-correct-guess').textContent =
     `You guessed ${correctArtistGuesses} out of ${maxRounds} correctly.`;
 
-  // Create chart for song titles
-  const titleCtx = document.getElementById('title-chart').getContext('2d');
-  new Chart(titleCtx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Correct', 'Incorrect'],
-      datasets: [{
-        data: [correctTitleGuesses, maxRounds - correctTitleGuesses],
-        backgroundColor: ['#1db954', '#e9ecef'],
-      }]
-    },
-    options: {
-      cutout: '70%',
-      plugins: {
-        tooltip: {
-          enabled: false
-        },
-        legend: {
-          display: false
-        },
-        title: {
-          display: true,
-          text: `${titleGuessPercentage}%`,
-          position: 'center',
-          color: '#1db954',
-          font: {
-            size: 48
+  // Check if charts already exist
+  if (titleChart) {
+    // Update existing chart data
+    titleChart.data.datasets[0].data = [correctTitleGuesses, maxRounds - correctTitleGuesses];
+    titleChart.options.plugins.title.text = `${titleGuessPercentage}%`;
+    titleChart.update();
+  } else {
+    // Create new chart for song titles
+    const titleCtx = document.getElementById('title-chart').getContext('2d');
+    titleChart = new Chart(titleCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Correct', 'Incorrect'],
+        datasets: [{
+          data: [correctTitleGuesses, maxRounds - correctTitleGuesses],
+          backgroundColor: ['#1db954', '#e9ecef'],
+        }]
+      },
+      options: {
+        cutout: '70%',
+        plugins: {
+          tooltip: {
+            enabled: false
+          },
+          legend: {
+            display: false
+          },
+          title: {
+            display: true,
+            text: `${titleGuessPercentage}%`,
+            position: 'center',
+            color: '#1db954',
+            font: {
+              size: 48
+            }
           }
         }
       }
-    }
-  });
+    });
+  }
 
-  // Create chart for artist names
-  const artistCtx = document.getElementById('artist-chart').getContext('2d');
-  new Chart(artistCtx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Correct', 'Incorrect'],
-      datasets: [{
-        data: [correctArtistGuesses, maxRounds - correctArtistGuesses],
-        backgroundColor: ['#1db954', '#e9ecef'],
-      }]
-    },
-    options: {
-      cutout: '70%',
-      plugins: {
-        tooltip: {
-          enabled: false
-        },
-        legend: {
-          display: false
-        },
-        title: {
-          display: true,
-          text: `${artistGuessPercentage}%`,
-          position: 'center',
-          color: '#1db954',
-          font: {
-            size: 48
+  if (artistChart) {
+    // Update existing chart data
+    artistChart.data.datasets[0].data = [correctArtistGuesses, maxRounds - correctArtistGuesses];
+    artistChart.options.plugins.title.text = `${artistGuessPercentage}%`;
+    artistChart.update();
+  } else {
+    // Create new chart for artist names
+    const artistCtx = document.getElementById('artist-chart').getContext('2d');
+    artistChart = new Chart(artistCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Correct', 'Incorrect'],
+        datasets: [{
+          data: [correctArtistGuesses, maxRounds - correctArtistGuesses],
+          backgroundColor: ['#1db954', '#e9ecef'],
+        }]
+      },
+      options: {
+        cutout: '70%',
+        plugins: {
+          tooltip: {
+            enabled: false
+          },
+          legend: {
+            display: false
+          },
+          title: {
+            display: true,
+            text: `${artistGuessPercentage}%`,
+            position: 'center',
+            color: '#1db954',
+            font: {
+              size: 48
+            }
           }
         }
       }
-    }
-  });
+    });
+  }
 }
 
 // Share on X functionality
@@ -309,7 +328,8 @@ function shareResultsOnX() {
 
 I guessed ${correctTitleGuesses}/${maxRounds} song titles (${titleGuessPercentage}%) and ${correctArtistGuesses}/${maxRounds} artist names (${artistGuessPercentage}%).
 
-Try it out here: https://spotify-guessing-game-1d365a8c48b8.herokuapp.com/`; // REPALCE ACTUAL APP URL ONCE DOMAIN
+Try it out here: https://spotify-guessing-game-1d365a8c48b8.herokuapp.com/`; // REPLACE WITH ACTUAL DOMAIN LATER
+
   // Encode the text for URL
   const encodedText = encodeURIComponent(shareText);
 
@@ -344,18 +364,11 @@ function stripParentheses(text) {
 // Restart the game
 document.getElementById('restart-button').addEventListener('click', () => {
   // Reset the game state
-  document.getElementById('result-page').style.display = 'none';
+  resetGame();
+
+  // Start a new game
   document.getElementById('playlist-form-container').style.display = 'block';
   document.getElementById('guidelines').style.display = 'block';
-  playlistLink = '';
-  playlistName = '';
-  tracks = [];
-  currentTrackIndex = 0;
-  maxRounds = 0;
-  totalRounds = 0;
-  correctTitleGuesses = 0;
-  correctArtistGuesses = 0;
-  document.getElementById('playlist-link').value = '';
 });
 
 // Event listener for the Return to Main Menu button during the game
@@ -396,4 +409,14 @@ function resetGame() {
   // Show the playlist submission form and guidelines
   document.getElementById('playlist-form-container').style.display = 'block';
   document.getElementById('guidelines').style.display = 'block';
+
+  // Destroy existing charts
+  if (titleChart) {
+    titleChart.destroy();
+    titleChart = null;
+  }
+  if (artistChart) {
+    artistChart.destroy();
+    artistChart = null;
+  }
 }
