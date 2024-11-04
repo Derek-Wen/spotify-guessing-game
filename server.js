@@ -1,37 +1,53 @@
 // server.js
-require('dotenv').config();
-const express = require('express');
-const axios = require('axios');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static('public')); // Serve static files from the 'public' directory
-
-const clientId = process.env.SPOTIFY_CLIENT_ID;
-const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+  }
+  
+  const express = require('express');
+  const axios = require('axios');
+  const cors = require('cors');
+  
+  const app = express();
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.static('public'));
+  
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  
+  console.log('Client ID is set:', !!clientId);
+  console.log('Client Secret is set:', !!clientSecret);
 
 // Function to get Spotify access token
 async function getAccessToken() {
-  const response = await axios({
-    method: 'post',
-    url: 'https://accounts.spotify.com/api/token',
-    params: {
-      grant_type: 'client_credentials',
-    },
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    auth: {
-      username: clientId,
-      password: clientSecret,
-    },
-  });
-  return response.data.access_token;
-}
-
+    const authOptions = {
+      method: 'post',
+      url: 'https://accounts.spotify.com/api/token',
+      params: {
+        grant_type: 'client_credentials',
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization:
+          'Basic ' +
+          Buffer.from(
+            process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
+          ).toString('base64'),
+      },
+    };
+  
+    try {
+      const response = await axios(authOptions);
+      return response.data.access_token;
+    } catch (error) {
+      console.error(
+        'Error fetching access token:',
+        error.response ? error.response.data : error.message
+      );
+      throw error;
+    }
+  }
+  
 // Route to handle playlist link submission
 app.post('/api/playlist', async (req, res) => {
   const { playlistLink } = req.body;
