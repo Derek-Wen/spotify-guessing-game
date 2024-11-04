@@ -17,6 +17,7 @@ document.getElementById('playlist-form').addEventListener('submit', async (e) =>
     await initializeGame();
   } catch (error) {
     console.error('Error:', error);
+    alert(error.message || 'An unexpected error occurred.');
   }
 });
 
@@ -56,6 +57,7 @@ async function initializeGame() {
 
     // Show the game area
     document.getElementById('playlist-form-container').style.display = 'none';
+    document.getElementById('guidelines').style.display = 'none';
     document.getElementById('game-area').style.display = 'block';
     document.getElementById('result').textContent = '';
     document.getElementById('result').className = '';
@@ -92,8 +94,15 @@ function playCurrentTrack() {
   document.getElementById('result').className = '';
   document.getElementById('guess-title').value = '';
   document.getElementById('guess-artist').value = '';
-  document.getElementById('next-button').style.display = 'none';
+
+  // Re-enable the input fields and submit button
+  document.getElementById('guess-title').disabled = false;
+  document.getElementById('guess-artist').disabled = false;
+  document.querySelector('#guess-form button[type="submit"]').disabled = false;
+
+  // Show the Skip button and hide the Next button
   document.getElementById('skip-button').style.display = 'inline-block';
+  document.getElementById('next-button').style.display = 'none';
 
   // Hide cover art
   document.getElementById('cover-art').style.display = 'none';
@@ -147,9 +156,14 @@ document.getElementById('guess-form').addEventListener('submit', (e) => {
   // Update score display
   updateScoreDisplay();
 
-  // Show the Next button and hide the Skip button
-  document.getElementById('next-button').style.display = 'inline-block';
+  // Disable the input fields and submit button
+  document.getElementById('guess-title').disabled = true;
+  document.getElementById('guess-artist').disabled = true;
+  document.querySelector('#guess-form button[type="submit"]').disabled = true;
+
+  // Hide the Skip button and show the Next button
   document.getElementById('skip-button').style.display = 'none';
+  document.getElementById('next-button').style.display = 'inline-block';
 
   // Display cover art
   if (track.cover_art_url) {
@@ -167,9 +181,14 @@ document.getElementById('skip-button').addEventListener('click', () => {
   // Update score display
   updateScoreDisplay();
 
-  // Show the Next button and hide the Skip button
-  document.getElementById('next-button').style.display = 'inline-block';
+  // Disable the input fields and submit button
+  document.getElementById('guess-title').disabled = true;
+  document.getElementById('guess-artist').disabled = true;
+  document.querySelector('#guess-form button[type="submit"]').disabled = true;
+
+  // Hide the Skip button and show the Next button
   document.getElementById('skip-button').style.display = 'none';
+  document.getElementById('next-button').style.display = 'inline-block';
 
   // Display cover art
   if (track.cover_art_url) {
@@ -188,6 +207,11 @@ document.getElementById('next-button').addEventListener('click', () => {
 });
 
 function endGame() {
+  // Stop the audio player
+  const audioPlayer = document.getElementById('audio-player');
+  audioPlayer.pause();
+  audioPlayer.currentTime = 0;
+
   // Hide game area and display result page
   document.getElementById('game-area').style.display = 'none';
   document.getElementById('result-page').style.display = 'block';
@@ -196,12 +220,104 @@ function endGame() {
   const titleGuessPercentage = ((correctTitleGuesses / maxRounds) * 100).toFixed(1);
   const artistGuessPercentage = ((correctArtistGuesses / maxRounds) * 100).toFixed(1);
 
-  // Display the result message
-  document.getElementById('final-result').innerHTML = `
-    <h2>Here are your results!</h2>
-    <p>You correctly guessed ${correctTitleGuesses} out of ${maxRounds} song titles (${titleGuessPercentage}%) from the "${playlistName}" playlist.</p>
-    <p>You correctly guessed ${correctArtistGuesses} out of ${maxRounds} artist names (${artistGuessPercentage}%) from the "${playlistName}" playlist.</p>
-  `;
+  // Update the text for correct guesses
+  document.getElementById('title-correct-guess').textContent =
+    `You guessed ${correctTitleGuesses} out of ${maxRounds} correctly.`;
+
+  document.getElementById('artist-correct-guess').textContent =
+    `You guessed ${correctArtistGuesses} out of ${maxRounds} correctly.`;
+
+  // Create chart for song titles
+  const titleCtx = document.getElementById('title-chart').getContext('2d');
+  new Chart(titleCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Correct', 'Incorrect'],
+      datasets: [{
+        data: [correctTitleGuesses, maxRounds - correctTitleGuesses],
+        backgroundColor: ['#1db954', '#e9ecef'],
+      }]
+    },
+    options: {
+      cutout: '70%',
+      plugins: {
+        tooltip: {
+          enabled: false
+        },
+        legend: {
+          display: false
+        },
+        title: {
+          display: true,
+          text: `${titleGuessPercentage}%`,
+          position: 'center',
+          color: '#1db954',
+          font: {
+            size: 48
+          }
+        }
+      }
+    }
+  });
+
+  // Create chart for artist names
+  const artistCtx = document.getElementById('artist-chart').getContext('2d');
+  new Chart(artistCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Correct', 'Incorrect'],
+      datasets: [{
+        data: [correctArtistGuesses, maxRounds - correctArtistGuesses],
+        backgroundColor: ['#1db954', '#e9ecef'],
+      }]
+    },
+    options: {
+      cutout: '70%',
+      plugins: {
+        tooltip: {
+          enabled: false
+        },
+        legend: {
+          display: false
+        },
+        title: {
+          display: true,
+          text: `${artistGuessPercentage}%`,
+          position: 'center',
+          color: '#1db954',
+          font: {
+            size: 48
+          }
+        }
+      }
+    }
+  });
+}
+
+// Share on X functionality
+document.getElementById('share-button').addEventListener('click', () => {
+  shareResultsOnX();
+});
+
+function shareResultsOnX() {
+  // Calculate percentages
+  const titleGuessPercentage = ((correctTitleGuesses / maxRounds) * 100).toFixed(1);
+  const artistGuessPercentage = ((correctArtistGuesses / maxRounds) * 100).toFixed(1);
+
+  // Create the text for sharing
+  const shareText = `I just played the Spotify Guessing Game by Derek Wen!
+
+I guessed ${correctTitleGuesses}/${maxRounds} song titles (${titleGuessPercentage}%) and ${correctArtistGuesses}/${maxRounds} artist names (${artistGuessPercentage}%).
+
+Try it out here: https://spotify-guessing-game-1d365a8c48b8.herokuapp.com/`; // REPALCE ACTUAL APP URL ONCE DOMAIN
+  // Encode the text for URL
+  const encodedText = encodeURIComponent(shareText);
+
+  // Create the share URL
+  const shareUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+
+  // Open the share URL in a new window
+  window.open(shareUrl, '_blank');
 }
 
 function shuffleArray(array) {
@@ -230,6 +346,7 @@ document.getElementById('restart-button').addEventListener('click', () => {
   // Reset the game state
   document.getElementById('result-page').style.display = 'none';
   document.getElementById('playlist-form-container').style.display = 'block';
+  document.getElementById('guidelines').style.display = 'block';
   playlistLink = '';
   playlistName = '';
   tracks = [];
@@ -238,4 +355,45 @@ document.getElementById('restart-button').addEventListener('click', () => {
   totalRounds = 0;
   correctTitleGuesses = 0;
   correctArtistGuesses = 0;
+  document.getElementById('playlist-link').value = '';
 });
+
+// Event listener for the Return to Main Menu button during the game
+document.getElementById('return-to-menu-button').addEventListener('click', () => {
+  resetGame();
+});
+
+// Event listener for the Return to Main Menu button on the result page
+document.getElementById('return-to-menu-button-result').addEventListener('click', () => {
+  resetGame();
+});
+
+function resetGame() {
+  // Stop the audio
+  const audioPlayer = document.getElementById('audio-player');
+  audioPlayer.pause();
+  audioPlayer.currentTime = 0;
+
+  // Hide game area and result page
+  document.getElementById('game-area').style.display = 'none';
+  document.getElementById('result-page').style.display = 'none';
+
+  // Reset the game state variables
+  playlistLink = '';
+  playlistName = '';
+  tracks = [];
+  currentTrackIndex = 0;
+  maxRounds = 0;
+  totalRounds = 0;
+  correctTitleGuesses = 0;
+  correctArtistGuesses = 0;
+
+  // Reset form fields
+  document.getElementById('playlist-link').value = '';
+  document.getElementById('guess-title').value = '';
+  document.getElementById('guess-artist').value = '';
+
+  // Show the playlist submission form and guidelines
+  document.getElementById('playlist-form-container').style.display = 'block';
+  document.getElementById('guidelines').style.display = 'block';
+}
