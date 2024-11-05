@@ -40,6 +40,8 @@ async function initializeGame() {
     playlistName = data.playlistName;
     tracks = data.tracks;
 
+    console.log(`Total tracks fetched: ${tracks.length}`);
+
     // Calculate max rounds
     const halfPlaylistLength = Math.ceil(tracks.length / 2);
     maxRounds = Math.min(halfPlaylistLength, 10);
@@ -47,8 +49,16 @@ async function initializeGame() {
     // Shuffle the tracks array
     shuffleArray(tracks);
 
+    // Log first 10 tracks after shuffle for verification
+    console.log('First 10 tracks after shuffle:');
+    console.log(tracks.slice(0, 10));
+
     // Limit tracks to maxRounds
     tracks = tracks.slice(0, maxRounds);
+
+    // Log selected tracks
+    console.log('Selected tracks for the game:');
+    console.log(tracks);
 
     // Reset game variables
     currentTrackIndex = 0;
@@ -220,6 +230,9 @@ function endGame() {
   document.getElementById('game-area').style.display = 'none';
   document.getElementById('result-page').style.display = 'block';
 
+  // Display playlist name
+  document.getElementById('playlist-name-display').textContent = `Playlist: ${playlistName}`;
+
   // Calculate percentages
   const titleGuessPercentage = ((correctTitleGuesses / maxRounds) * 100).toFixed(1);
   const artistGuessPercentage = ((correctArtistGuesses / maxRounds) * 100).toFixed(1);
@@ -324,9 +337,9 @@ function shareResultsOnX() {
   const artistGuessPercentage = ((correctArtistGuesses / maxRounds) * 100).toFixed(1);
 
   // Create the text for sharing
-  const shareText = `I just played the Spotify Guessing Game by Derek Wen!
-
-I guessed ${correctTitleGuesses}/${maxRounds} song titles (${titleGuessPercentage}%) and ${correctArtistGuesses}/${maxRounds} artist names (${artistGuessPercentage}%).
+  const shareText = `I just played Know Your Spotify!
+  
+I guessed ${correctTitleGuesses}/${maxRounds} song titles (${titleGuessPercentage}%) and ${correctArtistGuesses}/${maxRounds} artist names (${artistGuessPercentage}%) from the "${playlistName}" playlist.
 
 Try it out here: https://spotify-guessing-game-1d365a8c48b8.herokuapp.com/`; // REPLACE WITH ACTUAL DOMAIN LATER
 
